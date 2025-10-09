@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: petrosmart-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: petrosmart_db
+      POSTGRES_USER: petrosmart_user
+      POSTGRES_PASSWORD: petrosmart_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - petrosmart-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: petrosmart-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@petrosmart.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - petrosmart-network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  petrosmart-network:
+    driver: bridge
