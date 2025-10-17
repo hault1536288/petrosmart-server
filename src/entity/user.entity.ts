@@ -46,4 +46,16 @@ export class User {
   async validatePassword(password: string): Promise<boolean> {
     return await bcrypt.compare(password, this.password);
   }
+
+  @Column({ nullable: true })
+  googleId: string;
+
+  @Column({ nullable: true })
+  resetPasswordToken: string;
+
+  @Column({ nullable: true })
+  resetPasswordExpires: Date;
+
+  @Column({ default: false })
+  isEmailVerified: boolean;
 }

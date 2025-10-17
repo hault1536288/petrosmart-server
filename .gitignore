@@ -148,3 +148,6 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# guidelines
+guidelines/

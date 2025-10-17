@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user.module';
 import { User } from './entity/user.entity';
+import { Otp } from './entity/otp.entity';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -17,7 +18,7 @@ import { AuthModule } from './auth/auth.module';
       username: String(process.env.DB_USERNAME),
       password: String(process.env.DB_PASSWORD),
       database: String(process.env.DB_NAME),
-      entities: [User],
+      entities: [User, Otp],
       synchronize: process.env.NODE_ENV === 'development', // Only in development
       logging: process.env.NODE_ENV === 'development',
     }),
