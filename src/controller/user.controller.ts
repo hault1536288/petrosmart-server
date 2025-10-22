@@ -2,44 +2,88 @@ import {
   Controller,
   Get,
   Post,
-  Body,
   Patch,
-  Param,
   Delete,
+  Body,
+  Param,
   UseGuards,
+  Request,
+  ForbiddenException,
 } from '@nestjs/common';
-import { UserService } from '../services/user.service';
-import { CreateUserDto } from '../dtos/create-user.dto';
-import { UpdateUserDto } from '../dtos/update-user.dto';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { PoliciesGuard } from '../casl/policies.guard';
+import { CheckPolicies } from '../casl/decorators/check-policies.decorator';
+import { Action, AppAbility } from '../casl/casl-ability.factory';
+import { User } from '../entity/user.entity';
+import { CaslAbilityFactory } from '../casl/casl-ability.factory';
+import { UserService } from 'src/services/user.service';
+import { CreateUserDto } from 'src/dtos/create-user.dto';
+import { UpdateUserDto } from 'src/dtos/update-user.dto';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PoliciesGuard)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
-
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
-  }
+  constructor(
+    private userService: UserService,
+    private caslAbilityFactory: CaslAbilityFactory,
+  ) {}
 
   @Get()
-  findAll() {
+  @CheckPolicies((ability: AppAbility) => ability.can(Action.Read, User))
+  async findAll(@Request() req) {
+    const ability = this.caslAbilityFactory.createForUser(req.user);
+
+    if (ability.cannot(Action.Read, User) as boolean) {
+      throw new ForbiddenException('Cannot read users');
+    }
+
     return this.userService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  @CheckPolicies((ability: AppAbility) => ability.can(Action.Read, User))
+  async findOne(@Param('id') id: string, @Request() req) {
+    const ability = this.caslAbilityFactory.createForUser(req.user);
+
+    if (ability.cannot(Action.Read, User) as boolean) {
+      throw new ForbiddenException('Cannot read this user');
+    }
     return this.userService.findOne(+id);
   }
 
+  @Post()
+  @CheckPolicies((ability: AppAbility) => ability.can(Action.Create, User))
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.userService.create(createUserDto);
+  }
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
+  ) {
+    const user = await this.userService.findOne(+id);
+    const ability = this.caslAbilityFactory.createForUser(req.user);
+
+    if (ability.cannot(Action.Update, user!) as boolean) {
+      throw new ForbiddenException('Cannot update this user');
+    }
+
     return this.userService.update(+id, updateUserDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  @CheckPolicies((ability: AppAbility) => ability.can(Action.Delete, User))
+  async remove(@Param('id') id: string, @Request() req) {
+    const user = await this.userService.findOne(+id);
+    const ability = this.caslAbilityFactory.createForUser(req.user);
+
+    if (ability.cannot(Action.Delete, user!) as boolean) {
+      throw new ForbiddenException('Cannot delete this user');
+    }
+
+    await this.userService.remove(+id);
+    return { message: 'User deleted successfully' };
   }
 }

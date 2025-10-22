@@ -11,12 +11,16 @@ import { UserModule } from '../user.module';
 import { EmailService } from '../services/email.service';
 import { OtpService } from '../services/otp.service';
 import { Otp } from '../entity/otp.entity';
+import { UserService } from 'src/services/user.service';
+import { RoleService } from 'src/services/role.service';
+import { Role } from 'src/entity/roles.entity';
 
 @Module({
   imports: [
     UserModule,
     PassportModule,
-    TypeOrmModule.forFeature([Otp]),
+    TypeOrmModule.forFeature([Otp, Role]),
+    RoleService,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -35,6 +39,8 @@ import { Otp } from '../entity/otp.entity';
     GoogleStrategy,
     EmailService,
     OtpService,
+    UserService,
+    RoleService,
   ],
   exports: [AuthService],
 })

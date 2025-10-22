@@ -6,8 +6,11 @@ import {
   UpdateDateColumn,
   BeforeInsert,
   BeforeUpdate,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { Role, RoleType } from './roles.entity';
 
 @Entity('users')
 export class User {
@@ -58,4 +61,11 @@ export class User {
 
   @Column({ default: false })
   isEmailVerified: boolean;
+
+  @ManyToOne(() => Role, { eager: true })
+  @JoinColumn({ name: 'roleId' })
+  role: Role;
+
+  @Column({ default: RoleType.USER })
+  roleId: number;
 }

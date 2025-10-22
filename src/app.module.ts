@@ -7,6 +7,7 @@ import { UserModule } from './user.module';
 import { User } from './entity/user.entity';
 import { Otp } from './entity/otp.entity';
 import { AuthModule } from './auth/auth.module';
+import { CaslModule } from './casl/casl.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AuthModule } from './auth/auth.module';
     }),
     UserModule,
     AuthModule,
+    CaslModule,
   ],
   controllers: [AppController],
   providers: [AppService],

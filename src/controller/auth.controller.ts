@@ -11,7 +11,7 @@ import {
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dtos/login.dto';
 import { RegisterDto } from '../dtos/register.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RegisterInitDto, VerifyOtpDto } from 'src/dtos/register-otp.dto';
 import {
   ForgotPasswordDto,

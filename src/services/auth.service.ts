@@ -11,6 +11,7 @@ import { RegisterInitDto } from 'src/dtos/register-otp.dto';
 import { ForgotPasswordDto } from 'src/dtos/forgot-password.dto';
 import { VerifyResetOtpDto } from 'src/dtos/forgot-password.dto';
 import { CreateUserDto } from 'src/dtos/create-user.dto';
+import { RoleService } from './role.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     private jwtService: JwtService,
     private otpService: OtpService,
     private emailService: EmailService,
+    private roleService: RoleService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -53,16 +55,27 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    // Check if user already exists
     const existingUser = await this.userService.findByEmail(registerDto.email);
     if (existingUser) {
       throw new UnauthorizedException('User already exists');
     }
 
-    const user = await this.userService.create(registerDto);
-    const { password, ...result } = user;
+    // Get default role
+    const defaultRole = await this.roleService.getDefaultRole();
+    if (!defaultRole) {
+      throw new UnauthorizedException(
+        'Default role not found. Please contact administrator.',
+      );
+    }
 
-    const payload = { email: user.email, sub: user.id };
+    const user = await this.userService.create({
+      ...registerDto,
+      roleId: defaultRole.id,
+    });
+
+    const { password, ...result } = user;
+    const payload = { email: user.email, sub: user.id, role: user.role.name };
+
     return {
       access_token: this.jwtService.sign(payload),
       user: result,
