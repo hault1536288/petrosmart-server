@@ -32,7 +32,7 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'bigint', nullable: true })
   phone: string;
 
   @CreateDateColumn()

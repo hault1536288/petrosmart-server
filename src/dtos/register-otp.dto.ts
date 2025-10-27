@@ -1,29 +1,15 @@
 import { IsEmail, IsString, MinLength } from 'class-validator';
+import { RegisterDto } from './register.dto';
 
-export class RegisterInitDto {
-  @IsString()
-  @MinLength(3)
-  username: string;
+/**
+ * DTO for initiating OTP-based registration
+ * Extends RegisterDto to avoid duplication
+ */
+export class RegisterInitDto extends RegisterDto {}
 
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  @MinLength(2)
-  firstName: string;
-
-  @IsString()
-  @MinLength(2)
-  lastName: string;
-
-  @IsString()
-  @MinLength(6)
-  password: string;
-
-  @IsString()
-  phone?: string;
-}
-
+/**
+ * DTO for verifying OTP during registration
+ */
 export class VerifyOtpDto {
   @IsEmail()
   email: string;

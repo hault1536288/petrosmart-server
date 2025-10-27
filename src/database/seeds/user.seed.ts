@@ -18,7 +18,7 @@ export class UserSeeder {
         email: 'john.doe@example.com',
         firstName: 'John',
         lastName: 'Doe',
-        phone: '+1234567890',
+        phone: '01234567890',
         password: 'password123',
       },
       {
@@ -26,7 +26,7 @@ export class UserSeeder {
         email: 'jane.smith@example.com',
         firstName: 'Jane',
         lastName: 'Smith',
-        phone: '+0987654321',
+        phone: '987654321',
         password: 'password123',
       },
       {
@@ -34,7 +34,7 @@ export class UserSeeder {
         email: 'mike.johnson@example.com',
         firstName: 'Mike',
         lastName: 'Johnson',
-        phone: '+1122334455',
+        phone: '1122334455',
         password: 'password123',
       },
       {
@@ -42,7 +42,7 @@ export class UserSeeder {
         email: 'sarah.wilson@example.com',
         firstName: 'Sarah',
         lastName: 'Wilson',
-        phone: '+5566778899',
+        phone: '5566778899',
         password: 'password123',
       },
       {
@@ -50,7 +50,7 @@ export class UserSeeder {
         email: 'david.brown@example.com',
         firstName: 'David',
         lastName: 'Brown',
-        phone: '+9988776655',
+        phone: '9988776655'ed ,
         password: 'password123',
       },
     ];
