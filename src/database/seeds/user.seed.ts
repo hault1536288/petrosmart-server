@@ -14,6 +14,7 @@ export class UserSeeder {
 
     const users = [
       {
+        username: 'john.doe',
         email: 'john.doe@example.com',
         firstName: 'John',
         lastName: 'Doe',
@@ -21,6 +22,7 @@ export class UserSeeder {
         password: 'password123',
       },
       {
+        username: 'jane.smith',
         email: 'jane.smith@example.com',
         firstName: 'Jane',
         lastName: 'Smith',
@@ -28,6 +30,7 @@ export class UserSeeder {
         password: 'password123',
       },
       {
+        username: 'mike.johnson',
         email: 'mike.johnson@example.com',
         firstName: 'Mike',
         lastName: 'Johnson',
@@ -35,6 +38,7 @@ export class UserSeeder {
         password: 'password123',
       },
       {
+        username: 'sarah.wilson',
         email: 'sarah.wilson@example.com',
         firstName: 'Sarah',
         lastName: 'Wilson',
@@ -42,6 +46,7 @@ export class UserSeeder {
         password: 'password123',
       },
       {
+        username: 'david.brown',
         email: 'david.brown@example.com',
         firstName: 'David',
         lastName: 'Brown',

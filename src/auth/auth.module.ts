@@ -7,12 +7,10 @@ import { AuthService } from '../services/auth.service';
 import { AuthController } from '../controller/auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { GoogleStrategy } from './google.strategy';
-import { UserModule } from '../user.module';
+import { UserModule } from '../module/user.module';
 import { EmailService } from '../services/email.service';
 import { OtpService } from '../services/otp.service';
 import { Otp } from '../entity/otp.entity';
-import { UserService } from 'src/services/user.service';
-import { RoleService } from 'src/services/role.service';
 import { Role } from 'src/entity/roles.entity';
 
 @Module({
@@ -20,7 +18,6 @@ import { Role } from 'src/entity/roles.entity';
     UserModule,
     PassportModule,
     TypeOrmModule.forFeature([Otp, Role]),
-    RoleService,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -39,8 +36,6 @@ import { Role } from 'src/entity/roles.entity';
     GoogleStrategy,
     EmailService,
     OtpService,
-    UserService,
-    RoleService,
   ],
   exports: [AuthService],
 })

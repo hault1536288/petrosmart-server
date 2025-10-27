@@ -18,6 +18,9 @@ export class User {
   id: number;
 
   @Column({ unique: true })
+  username: string;
+
+  @Column({ unique: true })
   email: string;
 
   @Column()
@@ -66,6 +69,6 @@ export class User {
   @JoinColumn({ name: 'roleId' })
   role: Role;
 
-  @Column({ default: RoleType.USER })
+  @Column({ nullable: true })
   roleId: number;
 }

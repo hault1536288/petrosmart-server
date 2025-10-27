@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { UserSeeder } from './user.seed';
+import { seedProducts } from './product-seed';
 
 export class DatabaseSeeder {
   private dataSource: DataSource;
@@ -12,13 +13,17 @@ export class DatabaseSeeder {
     console.log('Starting database seeding...');
 
     try {
-      // Run user seeder
+      // Run user seeder (includes roles and permissions)
       const userSeeder = new UserSeeder();
       await userSeeder.run(this.dataSource);
 
-      console.log('Database seeding completed successfully!');
+      // Run product seeder
+      console.log('\n📦 Seeding products...');
+      await seedProducts(this.dataSource);
+
+      console.log('\n✅ Database seeding completed successfully!');
     } catch (error) {
-      console.error('Error during database seeding:', error);
+      console.error('❌ Error during database seeding:', error);
       throw error;
     }
   }

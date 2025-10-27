@@ -1,5 +1,12 @@
 import { DataSource } from 'typeorm';
 import { User } from '../entity/user.entity';
+import { Otp } from '../entity/otp.entity';
+import { Role } from '../entity/roles.entity';
+import { Permission } from '../entity/permissions.entity';
+import { Station } from '../entity/station.entity';
+import { Product } from '../entity/product.entity';
+import { Inventory } from '../entity/inventory.entity';
+import { InventoryTransaction } from '../entity/inventory-transaction.entity';
 import { DatabaseSeeder } from './seeds';
 import * as dotenv from 'dotenv';
 
@@ -20,7 +27,16 @@ const dataSource = new DataSource({
   username: String(process.env.DB_USERNAME || 'petrosmart_user'),
   password: String(process.env.DB_PASSWORD || 'petrosmart_password'),
   database: String(process.env.DB_NAME || 'petrosmart_db'),
-  entities: [User],
+  entities: [
+    User,
+    Otp,
+    Role,
+    Permission,
+    Station,
+    Product,
+    Inventory,
+    InventoryTransaction,
+  ],
   synchronize: true, // Enable synchronization to create tables
   logging: true,
 });

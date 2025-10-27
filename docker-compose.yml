@@ -18,6 +18,18 @@ services:
     networks:
       - petrosmart-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: petrosmart-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - petrosmart-network
+    command: redis-server --appendonly yes
+
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: petrosmart-pgadmin
@@ -36,6 +48,7 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   pgadmin_data:
 
 networks:

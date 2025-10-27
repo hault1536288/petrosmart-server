@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../services/user.service';
 import { LoginDto } from '../dtos/login.dto';
@@ -10,8 +10,12 @@ import { VerifyOtpDto } from 'src/dtos/register-otp.dto';
 import { RegisterInitDto } from 'src/dtos/register-otp.dto';
 import { ForgotPasswordDto } from 'src/dtos/forgot-password.dto';
 import { VerifyResetOtpDto } from 'src/dtos/forgot-password.dto';
-import { CreateUserDto } from 'src/dtos/create-user.dto';
-import { RoleService } from './role.service';
+import {
+  InvalidCredentialsException,
+  DuplicateResourceException,
+  ExpiredException,
+  ResourceNotFoundException,
+} from 'src/exceptions/custom-exceptions';
 
 @Injectable()
 export class AuthService {
@@ -20,11 +24,10 @@ export class AuthService {
     private jwtService: JwtService,
     private otpService: OtpService,
     private emailService: EmailService,
-    private roleService: RoleService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.userService.findByEmail(email);
+  async validateUser(username: string, password: string): Promise<any> {
+    const user = await this.userService.findByUsername(username);
     if (!user) return null;
 
     const isValid = await user.validatePassword(password);
@@ -36,16 +39,17 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
+    const user = await this.validateUser(loginDto.username, loginDto.password);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new InvalidCredentialsException('Invalid username or password');
     }
 
-    const payload = { email: user.email, sub: user.id };
+    const payload = { username: user.username, sub: user.id };
     return {
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
+        username: user.username,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -55,26 +59,27 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    const existingUser = await this.userService.findByEmail(registerDto.email);
-    if (existingUser) {
-      throw new UnauthorizedException('User already exists');
+    // Check if username already exists
+    const existingUserByUsername = await this.userService.findByUsername(
+      registerDto.username,
+    );
+    if (existingUserByUsername) {
+      throw new DuplicateResourceException('User', 'username');
+    }
+
+    // Check if email already exists
+    const existingUserByEmail = await this.userService.findByEmail(
+      registerDto.email,
+    );
+    if (existingUserByEmail) {
+      throw new DuplicateResourceException('User', 'email');
     }
 
     // Get default role
-    const defaultRole = await this.roleService.getDefaultRole();
-    if (!defaultRole) {
-      throw new UnauthorizedException(
-        'Default role not found. Please contact administrator.',
-      );
-    }
-
-    const user = await this.userService.create({
-      ...registerDto,
-      roleId: defaultRole.id,
-    });
+    const user = await this.userService.create(registerDto);
 
     const { password, ...result } = user;
-    const payload = { email: user.email, sub: user.id, role: user.role.name };
+    const payload = { username: user.username, sub: user.id };
 
     return {
       access_token: this.jwtService.sign(payload),
@@ -83,10 +88,20 @@ export class AuthService {
   }
 
   async registerInit(registerDto: RegisterDto) {
-    // Check if user already exists
-    const existingUser = await this.userService.findByEmail(registerDto.email);
-    if (existingUser) {
-      throw new UnauthorizedException('User already exists');
+    // Check if username already exists
+    const existingUserByUsername = await this.userService.findByUsername(
+      registerDto.username,
+    );
+    if (existingUserByUsername) {
+      throw new DuplicateResourceException('User', 'username');
+    }
+
+    // Check if email already exists
+    const existingUserByEmail = await this.userService.findByEmail(
+      registerDto.email,
+    );
+    if (existingUserByEmail) {
+      throw new DuplicateResourceException('User', 'email');
     }
 
     // Store registration data temporarily (you can use Redis or database)
@@ -114,17 +129,22 @@ export class AuthService {
     );
 
     if (!isValid) {
-      throw new UnauthorizedException('Invalid or expired OTP');
+      throw new ExpiredException('OTP');
     }
 
     // Create the user
     const user = await this.userService.create({
-      ...userData,
+      username: userData.username,
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      password: userData.password,
+      phone: userData.phone,
       isEmailVerified: true,
     });
 
     const { password, ...result } = user;
-    const payload = { email: user.email, sub: user.id };
+    const payload = { username: user.username, sub: user.id };
 
     return {
       access_token: this.jwtService.sign(payload),
@@ -157,12 +177,12 @@ export class AuthService {
     );
 
     if (!isValid) {
-      throw new UnauthorizedException('Invalid or expired OTP');
+      throw new ExpiredException('OTP');
     }
 
     const user = await this.userService.findByEmail(resetDto.email);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new ResourceNotFoundException('User');
     }
 
     // Update password
@@ -185,8 +205,12 @@ export class AuthService {
         user.isEmailVerified = true;
         await this.userService.update(user.id, user);
       } else {
-        // Create new user
+        // Create new user - generate username from email
+        const username =
+          googleUser.email.split('@')[0] +
+          Math.floor(Math.random() * 1000).toString();
         user = await this.userService.create({
+          username,
           email: googleUser.email,
           firstName: googleUser.firstName,
           lastName: googleUser.lastName,
