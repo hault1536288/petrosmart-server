@@ -50,7 +50,7 @@ export class UserSeeder {
         email: 'david.brown@example.com',
         firstName: 'David',
         lastName: 'Brown',
-        phone: '9988776655'ed ,
+        phone: '9988776655',
         password: 'password123',
       },
     ];
