@@ -8,9 +8,11 @@ import {
   BeforeUpdate,
   JoinColumn,
   ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Role, RoleType } from './roles.entity';
+import { Station } from './station.entity';
 
 @Entity('users')
 export class User {
@@ -71,4 +73,8 @@ export class User {
 
   @Column({ nullable: true })
   roleId: number;
+
+  // Stations managed by this user (for Admins/Managers)
+  @OneToMany(() => Station, (station) => station.manager)
+  managedStations: Station[];
 }

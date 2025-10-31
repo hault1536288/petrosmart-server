@@ -44,7 +44,12 @@ export class AuthService {
       throw new InvalidCredentialsException('Invalid username or password');
     }
 
-    const payload = { username: user.username, sub: user.id };
+    const payload = {
+      username: user.username,
+      sub: user.id,
+      role: user.role?.name, // Include role in JWT
+    };
+
     return {
       access_token: this.jwtService.sign(payload),
       user: {
@@ -54,6 +59,8 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
+        role: user.role?.name, // Include role in response
+        roleDisplayName: user.role?.displayName,
       },
     };
   }
@@ -225,14 +232,24 @@ export class AuthService {
   }
 
   async googleLogin(user: any) {
-    const payload = { email: user.email, sub: user.id };
+    const payload = {
+      username: user.username,
+      email: user.email,
+      sub: user.id,
+      role: user.role?.name,
+    };
+
     return {
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
+        username: user.username,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        phone: user.phone,
+        role: user.role?.name,
+        roleDisplayName: user.role?.displayName,
       },
     };
   }

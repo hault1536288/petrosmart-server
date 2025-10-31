@@ -4,10 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToMany,
-  JoinTable,
 } from 'typeorm';
-import { Permission } from './permissions.entity';
 
 export enum RoleType {
   SUPER_ADMIN = 'super_admin',
@@ -35,14 +32,6 @@ export class Role {
 
   @Column({ nullable: true })
   description: string;
-
-  @ManyToMany(() => Permission, { eager: true })
-  @JoinTable({
-    name: 'role_permissions',
-    joinColumn: { name: 'roleId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'permissionId', referencedColumnName: 'id' },
-  })
-  permissions: Permission[];
 
   @Column({ default: true })
   isActive: boolean;

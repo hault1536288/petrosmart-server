@@ -30,8 +30,8 @@ export class Station {
   @Column({ nullable: true })
   zipCode: string;
 
-  @Column({ nullable: true })
-  phone: string;
+  @Column({ type: 'bigint', nullable: true })
+  phone: number;
 
   @Column({ nullable: true })
   email: string;

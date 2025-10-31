@@ -13,7 +13,7 @@ export class DatabaseSeeder {
     console.log('Starting database seeding...');
 
     try {
-      // Run user seeder (includes roles and permissions)
+      // Run user seeder (includes roles)
       const userSeeder = new UserSeeder();
       await userSeeder.run(this.dataSource);
 

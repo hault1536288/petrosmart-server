@@ -2,7 +2,6 @@ import { DataSource } from 'typeorm';
 import { User } from '../entity/user.entity';
 import { Otp } from '../entity/otp.entity';
 import { Role } from '../entity/roles.entity';
-import { Permission } from '../entity/permissions.entity';
 import { Station } from '../entity/station.entity';
 import { Product } from '../entity/product.entity';
 import { Inventory } from '../entity/inventory.entity';
@@ -31,7 +30,6 @@ const dataSource = new DataSource({
     User,
     Otp,
     Role,
-    Permission,
     Station,
     Product,
     Inventory,
