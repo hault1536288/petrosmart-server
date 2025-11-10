@@ -9,7 +9,6 @@ import {
 export enum RoleType {
   SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
-  MANAGER = 'manager',
   STAFF = 'staff',
   USER = 'user',
   GUEST = 'guest',

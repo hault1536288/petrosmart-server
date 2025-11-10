@@ -16,6 +16,9 @@ import {
   ExpiredException,
   ResourceNotFoundException,
 } from 'src/exceptions/custom-exceptions';
+import { AcceptInvitationDto } from '../dtos/invitation.dto';
+import { InvitationService } from './invitation.service';
+import { RoleService } from './role.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +27,8 @@ export class AuthService {
     private jwtService: JwtService,
     private otpService: OtpService,
     private emailService: EmailService,
+    private invitationService: InvitationService,
+    private roleService: RoleService,
   ) {}
 
   async validateUser(username: string, password: string): Promise<any> {
@@ -251,6 +256,75 @@ export class AuthService {
         role: user.role?.name,
         roleDisplayName: user.role?.displayName,
       },
+    };
+  }
+
+  async registerWithInvitation(
+    token: string,
+    acceptInvitationDto: AcceptInvitationDto,
+  ) {
+    // Validate invitation
+    const invitation = await this.invitationService.validateInvitation(token);
+
+    // Check if username already exists
+    const existingUserByUsername = await this.userService.findByUsername(
+      acceptInvitationDto.username,
+    );
+    if (existingUserByUsername) {
+      throw new DuplicateResourceException('User', 'username');
+    }
+
+    // Check if email already exists
+    const existingUserByEmail = await this.userService.findByEmail(
+      invitation.email,
+    );
+    if (existingUserByEmail) {
+      throw new DuplicateResourceException('User', 'email');
+    }
+
+    // Get the role based on invitation
+    const role = await this.roleService.findByName(invitation.roleType);
+    if (!role) {
+      throw new Error('Role not found in database');
+    }
+
+    // Create user with the role from invitation
+    const user = await this.userService.create({
+      username: acceptInvitationDto.username,
+      email: invitation.email,
+      firstName: acceptInvitationDto.firstName,
+      lastName: acceptInvitationDto.lastName,
+      password: acceptInvitationDto.password,
+      phone: acceptInvitationDto.phone || '',
+      roleId: role.id,
+      isEmailVerified: true, // Invited users are auto-verified
+    });
+
+    // Mark invitation as accepted
+    await this.invitationService.markAsAccepted(token, user.id);
+
+    // Generate JWT token
+    const payload = {
+      username: user.username,
+      sub: user.id,
+      role: user.role?.name,
+    };
+
+    const { password, ...userWithoutPassword } = user;
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: userWithoutPassword.id,
+        username: userWithoutPassword.username,
+        email: userWithoutPassword.email,
+        firstName: userWithoutPassword.firstName,
+        lastName: userWithoutPassword.lastName,
+        phone: userWithoutPassword.phone,
+        role: user.role?.name,
+        roleDisplayName: user.role?.displayName,
+      },
+      message: 'Account created successfully using invitation',
     };
   }
 }

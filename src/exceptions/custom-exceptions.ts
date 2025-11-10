@@ -147,3 +147,18 @@ export class ExternalServiceException extends HttpException {
     );
   }
 }
+
+/**
+ * Exception for invalid operations
+ */
+export class InvalidOperationException extends HttpException {
+  constructor(message: string) {
+    super(
+      {
+        error: 'Invalid Operation',
+        message,
+      },
+      HttpStatus.BAD_REQUEST,
+    );
+  }
+}

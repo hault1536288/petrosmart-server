@@ -3,12 +3,11 @@ import {
   IsNotEmpty,
   IsString,
   IsOptional,
-  IsBoolean,
   MinLength,
   IsNumber,
 } from 'class-validator';
 
-export class CreateUserDto {
+export class CreateStaffDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
@@ -20,10 +19,12 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
   firstName: string;
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
   lastName: string;
 
   @IsString()
@@ -34,18 +35,11 @@ export class CreateUserDto {
   @IsOptional()
   phone?: string;
 
-  @IsBoolean()
-  @IsOptional()
-  isEmailVerified?: boolean;
-
-  @IsString()
-  @IsOptional()
-  googleId?: string;
-
   @IsString()
   @IsOptional()
   profilePicture?: string;
 
+  @IsNumber()
   @IsOptional()
-  roleId?: number;
+  stationId?: number; // Staff can be assigned to a station
 }

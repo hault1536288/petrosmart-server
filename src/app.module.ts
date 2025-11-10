@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './module/user.module';
 import { ProductModule } from './module/product.module';
+import { SubscriptionModule } from './module/subscription.module';
 import { User } from './entity/user.entity';
 import { Otp } from './entity/otp.entity';
 import { Role } from './entity/roles.entity';
@@ -12,6 +13,8 @@ import { Station } from './entity/station.entity';
 import { Product } from './entity/product.entity';
 import { Inventory } from './entity/inventory.entity';
 import { InventoryTransaction } from './entity/inventory-transaction.entity';
+import { Invitation } from './entity/invitation.entity';
+import { Subscription } from './entity/subscription.entity';
 import { AuthModule } from './auth/auth.module';
 import { CaslModule } from './casl/casl.module';
 import { RedisModule } from './redis/redis.module';
@@ -34,6 +37,8 @@ import { RedisModule } from './redis/redis.module';
         Product,
         Inventory,
         InventoryTransaction,
+        Invitation,
+        Subscription,
       ],
       synchronize: process.env.NODE_ENV === 'development', // Only in development
       logging: process.env.NODE_ENV === 'development',
@@ -41,6 +46,7 @@ import { RedisModule } from './redis/redis.module';
     RedisModule,
     UserModule,
     ProductModule,
+    SubscriptionModule,
     AuthModule,
     CaslModule,
   ],

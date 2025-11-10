@@ -9,10 +9,12 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Role, RoleType } from './roles.entity';
 import { Station } from './station.entity';
+import { Subscription } from './subscription.entity';
 
 @Entity('users')
 export class User {
@@ -34,7 +36,7 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ type: 'bigint', nullable: true })
+  @Column()
   phone: string;
 
   @CreateDateColumn()
@@ -74,7 +76,11 @@ export class User {
   @Column({ nullable: true })
   roleId: number;
 
-  // Stations managed by this user (for Admins/Managers)
+  // Stations managed by this user (for Admins)
   @OneToMany(() => Station, (station) => station.manager)
   managedStations: Station[];
+
+  // Subscription (for Admins in SaaS model)
+  @OneToOne(() => Subscription, (subscription) => subscription.user)
+  subscription?: Subscription;
 }

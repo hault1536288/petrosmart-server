@@ -7,6 +7,7 @@ import {
   Request,
   Res,
   Req,
+  Param,
 } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dtos/login.dto';
@@ -18,10 +19,15 @@ import {
   VerifyResetOtpDto,
 } from 'src/dtos/forgot-password.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { AcceptInvitationDto } from '../dtos/invitation.dto';
+import { InvitationService } from '../services/invitation.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private invitationService: InvitationService,
+  ) {}
 
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
@@ -78,5 +84,30 @@ export class AuthController {
     res.redirect(
       `${process.env.FRONTEND_URL}/auth/callback?token=${result.access_token}`,
     );
+  }
+
+  /**
+   * Validate invitation token (public endpoint)
+   */
+  @Get('invitations/:token/validate')
+  async validateInvitation(@Param('token') token: string) {
+    const invitation = await this.invitationService.validateInvitation(token);
+    return {
+      valid: true,
+      email: invitation.email,
+      roleType: invitation.roleType,
+      expiresAt: invitation.expiresAt,
+    };
+  }
+
+  /**
+   * Register with invitation token (public endpoint)
+   */
+  @Post('register/invitation/:token')
+  async registerWithInvitation(
+    @Param('token') token: string,
+    @Body() acceptInvitationDto: AcceptInvitationDto,
+  ) {
+    return this.authService.registerWithInvitation(token, acceptInvitationDto);
   }
 }

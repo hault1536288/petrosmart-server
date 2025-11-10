@@ -10,6 +10,7 @@ import { GoogleStrategy } from './google.strategy';
 import { UserModule } from '../module/user.module';
 import { EmailService } from '../services/email.service';
 import { OtpService } from '../services/otp.service';
+import { RoleService } from '../services/role.service';
 import { Otp } from '../entity/otp.entity';
 import { Role } from 'src/entity/roles.entity';
 
@@ -36,6 +37,7 @@ import { Role } from 'src/entity/roles.entity';
     GoogleStrategy,
     EmailService,
     OtpService,
+    RoleService,
   ],
   exports: [AuthService],
 })

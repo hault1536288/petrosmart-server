@@ -24,11 +24,6 @@ export class RoleSeeder {
         description: 'Organization administrator - permissions defined in CASL',
       },
       {
-        name: RoleType.MANAGER,
-        displayName: 'Manager',
-        description: 'Team manager - permissions defined in CASL',
-      },
-      {
         name: RoleType.STAFF,
         displayName: 'Staff',
         description: 'Standard employee - permissions defined in CASL',

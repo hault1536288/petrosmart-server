@@ -6,6 +6,8 @@ import { Station } from '../entity/station.entity';
 import { Product } from '../entity/product.entity';
 import { Inventory } from '../entity/inventory.entity';
 import { InventoryTransaction } from '../entity/inventory-transaction.entity';
+import { Invitation } from '../entity/invitation.entity';
+import { Subscription } from '../entity/subscription.entity';
 import { DatabaseSeeder } from './seeds';
 import * as dotenv from 'dotenv';
 
@@ -34,6 +36,8 @@ const dataSource = new DataSource({
     Product,
     Inventory,
     InventoryTransaction,
+    Invitation,
+    Subscription,
   ],
   synchronize: true, // Enable synchronization to create tables
   logging: true,

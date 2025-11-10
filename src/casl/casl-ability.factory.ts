@@ -65,19 +65,6 @@ export class CaslAbilityFactory {
         cannot(Action.Manage, Role);
         break;
 
-      case RoleType.MANAGER:
-        can(Action.Read, User);
-        can(Action.Update, User, { id: user.id }); // Can only update self
-        can(Action.Read, Station);
-        can(Action.Update, Station, { managerId: user.id }); // Can manage their own station
-        can(Action.Read, Product);
-        can(Action.Read, Inventory);
-        can(Action.Update, Inventory); // Can update inventory at their station
-        can(Action.Read, 'Settings');
-        can(Action.Create, 'Reports');
-        can(Action.Read, 'Reports');
-        break;
-
       case RoleType.STAFF:
         can(Action.Read, User, { id: user.id }); // Can only read self
         can(Action.Update, User, { id: user.id }); // Can only update self

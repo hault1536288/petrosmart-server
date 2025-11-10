@@ -3,12 +3,14 @@ import {
   IsNotEmpty,
   IsString,
   IsOptional,
-  IsBoolean,
   MinLength,
+  IsEnum,
   IsNumber,
+  Min,
 } from 'class-validator';
+import { SubscriptionPlan } from '../entity/subscription.entity';
 
-export class CreateUserDto {
+export class CreateAdminDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
@@ -20,10 +22,12 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
   firstName: string;
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
   lastName: string;
 
   @IsString()
@@ -34,18 +38,17 @@ export class CreateUserDto {
   @IsOptional()
   phone?: string;
 
-  @IsBoolean()
-  @IsOptional()
-  isEmailVerified?: boolean;
-
-  @IsString()
-  @IsOptional()
-  googleId?: string;
-
   @IsString()
   @IsOptional()
   profilePicture?: string;
 
+  // Subscription fields
+  @IsEnum(SubscriptionPlan)
   @IsOptional()
-  roleId?: number;
+  subscriptionPlan?: SubscriptionPlan;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  trialDays?: number;
 }
