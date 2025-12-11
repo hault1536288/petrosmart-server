@@ -11,14 +11,29 @@ import { UserModule } from '../module/user.module';
 import { EmailService } from '../services/email.service';
 import { OtpService } from '../services/otp.service';
 import { RoleService } from '../services/role.service';
+import { AuditLogService } from '../services/audit-log.service';
+import { PasswordHistoryService } from '../services/password-history.service';
+import { TokenBlacklistService } from 'src/services/token-blacklist.service';
+import { InvitationService } from '../services/invitation.service';
 import { Otp } from '../entity/otp.entity';
 import { Role } from 'src/entity/roles.entity';
+import { AuditLog } from '../entity/audit-log.entity';
+import { PasswordHistory } from '../entity/password-history.entity';
+import { Invitation } from '../entity/invitation.entity';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
   imports: [
     UserModule,
     PassportModule,
-    TypeOrmModule.forFeature([Otp, Role]),
+    RedisModule,
+    TypeOrmModule.forFeature([
+      Otp,
+      Role,
+      AuditLog,
+      PasswordHistory,
+      Invitation,
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -38,7 +53,11 @@ import { Role } from 'src/entity/roles.entity';
     EmailService,
     OtpService,
     RoleService,
+    AuditLogService,
+    PasswordHistoryService,
+    TokenBlacklistService,
+    InvitationService,
   ],
-  exports: [AuthService],
+  exports: [AuthService, TokenBlacklistService],
 })
 export class AuthModule {}

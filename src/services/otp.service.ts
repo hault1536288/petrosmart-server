@@ -6,6 +6,8 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class OtpService {
+  private readonly MAX_ATTEMPTS = 5;
+
   constructor(
     @InjectRepository(Otp)
     private otpRepository: Repository<Otp>,
@@ -44,29 +46,86 @@ export class OtpService {
     email: string,
     code: string,
     type: OtpType,
-  ): Promise<boolean> {
+  ): Promise<{ success: boolean; message?: string; attemptsLeft?: number }> {
+    // Find the most recent OTP for this email and type
     const otp = await this.otpRepository.findOne({
       where: {
         email,
-        code,
         type,
         isUsed: false,
       },
+      order: { createdAt: 'DESC' },
     });
 
-    if (!otp) return false;
-    if (new Date() > otp.expiresAt) return false;
+    if (!otp) {
+      return { success: false, message: 'Invalid or expired OTP' };
+    }
+
+    if (new Date() > otp.expiresAt) {
+      return { success: false, message: 'OTP has expired' };
+    }
+
+    if (otp.isLocked) {
+      return {
+        success: false,
+        message: 'OTP is locked due to too many failed attempts',
+      };
+    }
+
+    // Check if code matches
+    if (otp.code !== code) {
+      otp.attempts += 1;
+
+      // Lock if max attempts reached
+      if (otp.attempts >= this.MAX_ATTEMPTS) {
+        otp.isLocked = true;
+        await this.otpRepository.save(otp);
+        return {
+          success: false,
+          message: 'OTP is locked due to too many failed attempts',
+          attemptsLeft: 0,
+        };
+      }
+
+      await this.otpRepository.save(otp);
+      const attemptsLeft = this.MAX_ATTEMPTS - otp.attempts;
+      return {
+        success: false,
+        message: `Invalid OTP. ${attemptsLeft} attempts remaining`,
+        attemptsLeft,
+      };
+    }
 
     // Mark as used
     otp.isUsed = true;
     await this.otpRepository.save(otp);
 
-    return true;
+    return { success: true };
   }
 
   async cleanExpiredOTPs(): Promise<void> {
     await this.otpRepository.delete({
       expiresAt: LessThan(new Date()),
     });
+  }
+
+  async invalidateUserOTPs(email: string, type: OtpType): Promise<void> {
+    await this.otpRepository.update(
+      { email, type, isUsed: false },
+      { isUsed: true },
+    );
+  }
+
+  async getOTPAttempts(email: string, type: OtpType): Promise<number> {
+    const otp = await this.otpRepository.findOne({
+      where: {
+        email,
+        type,
+        isUsed: false,
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    return otp?.attempts || 0;
   }
 }

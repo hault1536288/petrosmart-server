@@ -8,7 +8,9 @@ import {
   Res,
   Req,
   Param,
+  Ip,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dtos/login.dto';
 import { RegisterDto } from '../dtos/register.dto';
@@ -61,13 +63,21 @@ export class AuthController {
   }
 
   @Post('forgot-password')
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(forgotPasswordDto);
+  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 requests per minute
+  async forgotPassword(
+    @Body() forgotPasswordDto: ForgotPasswordDto,
+    @Ip() ipAddress: string,
+  ) {
+    return this.authService.forgotPassword(forgotPasswordDto, ipAddress);
   }
 
   @Post('reset-password')
-  async resetPassword(@Body() resetDto: VerifyResetOtpDto) {
-    return this.authService.resetPassword(resetDto);
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  async resetPassword(
+    @Body() resetDto: VerifyResetOtpDto,
+    @Ip() ipAddress: string,
+  ) {
+    return this.authService.resetPassword(resetDto, ipAddress);
   }
 
   @Get('google')

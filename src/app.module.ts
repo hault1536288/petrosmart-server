@@ -3,6 +3,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { UserModule } from './module/user.module';
 import { ProductModule } from './module/product.module';
 import { SubscriptionModule } from './module/subscription.module';
@@ -15,6 +17,8 @@ import { Inventory } from './entity/inventory.entity';
 import { InventoryTransaction } from './entity/inventory-transaction.entity';
 import { Invitation } from './entity/invitation.entity';
 import { Subscription } from './entity/subscription.entity';
+import { AuditLog } from './entity/audit-log.entity';
+import { PasswordHistory } from './entity/password-history.entity';
 import { AuthModule } from './auth/auth.module';
 import { CaslModule } from './casl/casl.module';
 import { RedisModule } from './redis/redis.module';
@@ -22,6 +26,12 @@ import { RedisModule } from './redis/redis.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 60 seconds
+        limit: 10, // 10 requests per minute (default)
+      },
+    ]),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: String(process.env.DB_HOST),
@@ -39,6 +49,8 @@ import { RedisModule } from './redis/redis.module';
         InventoryTransaction,
         Invitation,
         Subscription,
+        AuditLog,
+        PasswordHistory,
       ],
       synchronize: process.env.NODE_ENV === 'development', // Only in development
       logging: process.env.NODE_ENV === 'development',
@@ -51,6 +63,12 @@ import { RedisModule } from './redis/redis.module';
     CaslModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

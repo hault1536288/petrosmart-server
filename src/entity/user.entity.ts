@@ -60,12 +60,6 @@ export class User {
   @Column({ nullable: true })
   googleId: string;
 
-  @Column({ nullable: true })
-  resetPasswordToken: string;
-
-  @Column({ nullable: true })
-  resetPasswordExpires: Date;
-
   @Column({ default: false })
   isEmailVerified: boolean;
 

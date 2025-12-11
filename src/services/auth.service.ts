@@ -1,11 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { UserService } from '../services/user.service';
 import { LoginDto } from '../dtos/login.dto';
 import { RegisterDto } from '../dtos/register.dto';
 import { OtpService } from './otp.service';
 import { EmailService } from './email.service';
+import { AuditLogService } from './audit-log.service';
+import { PasswordHistoryService } from './password-history.service';
+import { TokenBlacklistService } from 'src/services/token-blacklist.service';
 import { OtpType } from 'src/entity/otp.entity';
+import { AuditLogAction } from 'src/entity/audit-log.entity';
 import { VerifyOtpDto } from 'src/dtos/register-otp.dto';
 import { RegisterInitDto } from 'src/dtos/register-otp.dto';
 import { ForgotPasswordDto } from 'src/dtos/forgot-password.dto';
@@ -19,9 +24,12 @@ import {
 import { AcceptInvitationDto } from '../dtos/invitation.dto';
 import { InvitationService } from './invitation.service';
 import { RoleService } from './role.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
+  private readonly MAX_PASSWORD_RESET_REQUESTS_PER_DAY = 3;
+
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
@@ -29,6 +37,10 @@ export class AuthService {
     private emailService: EmailService,
     private invitationService: InvitationService,
     private roleService: RoleService,
+    private auditLogService: AuditLogService,
+    private passwordHistoryService: PasswordHistoryService,
+    private tokenBlacklistService: TokenBlacklistService,
+    private configService: ConfigService,
   ) {}
 
   async validateUser(username: string, password: string): Promise<any> {
@@ -134,14 +146,16 @@ export class AuthService {
     verifyDto: VerifyOtpDto,
     userData: RegisterInitDto,
   ) {
-    const isValid = await this.otpService.verifyOTP(
+    const verificationResult = await this.otpService.verifyOTP(
       verifyDto.email,
       verifyDto.otp,
       OtpType.REGISTRATION,
     );
 
-    if (!isValid) {
-      throw new ExpiredException('OTP');
+    if (!verificationResult.success) {
+      throw new BadRequestException(
+        verificationResult.message || 'Invalid OTP',
+      );
     }
 
     // Create the user
@@ -164,13 +178,51 @@ export class AuthService {
     };
   }
 
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
-    const user = await this.userService.findByEmail(forgotPasswordDto.email);
+  async forgotPassword(
+    forgotPasswordDto: ForgotPasswordDto,
+    ipAddress?: string,
+  ) {
+    const email = forgotPasswordDto.email;
+    const user = await this.userService.findByEmail(email);
+
+    // Check rate limiting - max requests per day
+    const requestsInLast24h =
+      await this.auditLogService.getPasswordResetAttemptsInLast24Hours(email);
+
+    if (requestsInLast24h >= this.MAX_PASSWORD_RESET_REQUESTS_PER_DAY) {
+      // Log the attempt
+      await this.auditLogService.create({
+        userId: user?.id,
+        action: AuditLogAction.PASSWORD_RESET_REQUESTED,
+        email,
+        ipAddress,
+        isSuccessful: false,
+        metadata: { reason: 'Rate limit exceeded' },
+      });
+
+      throw new BadRequestException(
+        'Too many password reset requests. Please try again later.',
+      );
+    }
+
     if (!user) {
-      // Don't reveal if email exists
+      // Log the attempt for non-existent user
+      await this.auditLogService.create({
+        action: AuditLogAction.PASSWORD_RESET_REQUESTED,
+        email,
+        ipAddress,
+        isSuccessful: false,
+        metadata: { reason: 'User not found' },
+      });
+
+      // Don't reveal if email exists (security best practice)
       return { message: 'If the email exists, a reset code will be sent.' };
     }
 
+    // Invalidate any previous OTPs
+    await this.otpService.invalidateUserOTPs(email, OtpType.PASSWORD_RESET);
+
+    // Create and send new OTP
     const otp = await this.otpService.createOTP(
       user.email,
       OtpType.PASSWORD_RESET,
@@ -178,30 +230,131 @@ export class AuthService {
     );
     await this.emailService.sendOTP(user.email, otp, 'password_reset');
 
+    // Log successful request
+    await this.auditLogService.create({
+      userId: user.id,
+      action: AuditLogAction.PASSWORD_RESET_REQUESTED,
+      email,
+      ipAddress,
+      isSuccessful: true,
+    });
+
     return { message: 'Password reset code sent to email.' };
   }
 
-  async resetPassword(resetDto: VerifyResetOtpDto) {
-    const isValid = await this.otpService.verifyOTP(
-      resetDto.email,
-      resetDto.otp,
-      OtpType.PASSWORD_RESET,
-    );
+  async resetPassword(resetDto: VerifyResetOtpDto, ipAddress?: string) {
+    const email = resetDto.email;
+    const user = await this.userService.findByEmail(email);
 
-    if (!isValid) {
-      throw new ExpiredException('OTP');
-    }
-
-    const user = await this.userService.findByEmail(resetDto.email);
     if (!user) {
       throw new ResourceNotFoundException('User');
     }
 
-    // Update password
-    user.password = resetDto.newPassword;
-    await this.userService.update(user.id, { password: resetDto.newPassword });
+    // Verify OTP
+    const verificationResult = await this.otpService.verifyOTP(
+      email,
+      resetDto.otp,
+      OtpType.PASSWORD_RESET,
+    );
 
-    return { message: 'Password reset successful' };
+    if (!verificationResult.success) {
+      // Log failed attempt
+      await this.auditLogService.create({
+        userId: user.id,
+        action: AuditLogAction.PASSWORD_RESET_FAILED,
+        email,
+        ipAddress,
+        isSuccessful: false,
+        metadata: {
+          reason: verificationResult.message,
+          attemptsLeft: verificationResult.attemptsLeft,
+        },
+      });
+
+      throw new BadRequestException(
+        verificationResult.message || 'Invalid or expired OTP',
+      );
+    }
+
+    // Check if password was used before
+    const isPasswordReused = await this.passwordHistoryService.isPasswordReused(
+      user.id,
+      resetDto.newPassword,
+    );
+
+    if (isPasswordReused) {
+      await this.auditLogService.create({
+        userId: user.id,
+        action: AuditLogAction.PASSWORD_RESET_FAILED,
+        email,
+        ipAddress,
+        isSuccessful: false,
+        metadata: { reason: 'Password reused' },
+      });
+
+      throw new BadRequestException(
+        'You cannot reuse one of your last 5 passwords. Please choose a different password.',
+      );
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(resetDto.newPassword, salt);
+
+    // Add current password to history before updating
+    if (user.password) {
+      await this.passwordHistoryService.addToHistory(user.id, user.password);
+    }
+
+    // Update password
+    await this.userService.update(user.id, { password: hashedPassword });
+
+    // Blacklist all existing tokens for this user
+    const jwtExpiresIn = this.configService.get('JWT_EXPIRES_IN') || '24h';
+    const expiresInSeconds = this.parseJwtExpiry(jwtExpiresIn);
+    await this.tokenBlacklistService.blacklistUserTokens(
+      user.id,
+      expiresInSeconds,
+    );
+
+    // Send notification email
+    await this.emailService.sendPasswordChangeNotification(
+      user.email,
+      `${user.firstName} ${user.lastName}`,
+      ipAddress,
+    );
+
+    // Log successful password reset
+    await this.auditLogService.create({
+      userId: user.id,
+      action: AuditLogAction.PASSWORD_RESET_SUCCESS,
+      email,
+      ipAddress,
+      isSuccessful: true,
+    });
+
+    return {
+      message:
+        'Password reset successful. Please login with your new password.',
+    };
+  }
+
+  private parseJwtExpiry(expiresIn: string): number {
+    const unit = expiresIn.slice(-1);
+    const value = parseInt(expiresIn.slice(0, -1));
+
+    switch (unit) {
+      case 's':
+        return value;
+      case 'm':
+        return value * 60;
+      case 'h':
+        return value * 60 * 60;
+      case 'd':
+        return value * 24 * 60 * 60;
+      default:
+        return 86400; // Default 24 hours
+    }
   }
 
   async validateGoogleUser(googleUser: any) {

@@ -43,6 +43,12 @@ export class Otp {
   @Column({ default: false })
   isUsed: boolean;
 
+  @Column({ default: 0 })
+  attempts: number;
+
+  @Column({ default: false })
+  isLocked: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 }

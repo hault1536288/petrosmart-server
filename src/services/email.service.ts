@@ -58,20 +58,41 @@ export class EmailService {
     });
   }
 
-  async sendPasswordResetLink(email: string, resetToken: string) {
-    const resetUrl = `${this.configService.get('FRONTEND_URL')}/reset-password?token=${resetToken}`;
-
+  async sendPasswordChangeNotification(
+    email: string,
+    userName: string,
+    ipAddress?: string,
+  ) {
     const html = `
       <!DOCTYPE html>
       <html>
-      <body style="font-family: Arial, sans-serif;">
-        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2>Password Reset Request</h2>
-          <p>You requested to reset your password. Click the button below:</p>
-          <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">Reset Password</a>
-          <p>Or copy this link: ${resetUrl}</p>
-          <p>This link will expire in 1 hour.</p>
-          <p>If you didn't request this, please ignore this email.</p>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .alert-box { background: #d4edda; border: 1px solid #c3e6cb; padding: 20px; border-radius: 5px; margin: 20px 0; }
+          .warning-box { background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 5px; margin: 20px 0; }
+          .footer { margin-top: 20px; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h2>Password Changed Successfully</h2>
+          <div class="alert-box">
+            <p><strong>✅ Your password has been changed</strong></p>
+            <p>Hello ${userName},</p>
+            <p>This is a confirmation that your Petrosmart account password was recently changed.</p>
+            ${ipAddress ? `<p><strong>IP Address:</strong> ${ipAddress}</p>` : ''}
+            <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+          </div>
+          <div class="warning-box">
+            <p><strong>⚠️ Didn't change your password?</strong></p>
+            <p>If you did not make this change, please contact our support team immediately at support@petrosmart.com</p>
+          </div>
+          <div class="footer">
+            <p>© 2025 Petrosmart. All rights reserved.</p>
+            <p>This is an automated security notification.</p>
+          </div>
         </div>
       </body>
       </html>
@@ -80,7 +101,7 @@ export class EmailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM'),
       to: email,
-      subject: 'Reset Your Password - Petrosmart',
+      subject: 'Password Changed - Petrosmart',
       html,
     });
   }

@@ -41,6 +41,6 @@ CREATE TABLE IF NOT EXISTS `subscriptions` (
 -- Add index for checking expired subscriptions
 CREATE INDEX `IDX_status_endDate` ON `subscriptions` (`status`, `endDate`);
 
--- Add index for trial subscriptions
+-- Add index for trial subscriptionsq
 CREATE INDEX `IDX_status_trialEndDate` ON `subscriptions` (`status`, `trialEndDate`);
 
